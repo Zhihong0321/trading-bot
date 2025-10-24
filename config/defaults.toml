@@ -1,0 +1,33 @@
+[simulation]
+dataset_id = "eurusd_sample"
+start_ts = "2024-01-02T08:00:00Z"
+speed = "1x"
+initial_fund = 10000.0
+leverage_cap = 10.0
+risk_pct = 0.7
+entry_threshold_buy = 3
+entry_threshold_sell = -3
+sl_atr_mult = 1.2
+tp_mult = 2.4
+trailing_stop = false
+spread_model = "spread_only"
+avg_spread_pips = 1.2
+commission_model = "none"
+commission_per_million_per_side = 0.0
+event_guard_enabled = true
+event_guard_window_sec = 90
+rng_seed = 42
+
+[weights]
+ema_slope = 0.2
+macd = 0.2
+bb_pos = 0.15
+atr_brk = 0.15
+vwap_dev = 0.3
+
+[costs]
+spread_only = { avg_pips = 1.2 }
+core_plus_commission = { avg_pips = 0.3, usd_per_million_per_side = 50.0 }
+
+[risk]
+min_free_margin_ratio = 0.3
