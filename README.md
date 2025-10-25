@@ -27,6 +27,21 @@ The API will be available at <http://127.0.0.1:8000>. Open <http://127.0.0.1:800
 poetry run pytest
 ```
 
+## Railway deployment
+
+The repository ships with a [`railway.toml`](railway.toml) manifest and helper scripts that configure how Railway builds and starts the app:
+
+- [`scripts/railway_build.sh`](scripts/railway_build.sh) installs Poetry (if necessary), configures it to use the system environment, and installs the runtime dependencies.
+- [`scripts/railway_start.sh`](scripts/railway_start.sh) boots the FastAPI server with Uvicorn on the port Railway provides via the `PORT` environment variable.
+
+To deploy the service:
+
+1. In Railway, create a new project (or open an existing one) and add an empty service linked to this repository. Railway will automatically read `railway.toml` and wire up the build/start commands above.
+2. (Optional, but recommended) Add a managed Postgres database to the project so the simulator can persist state in future milestones. No application configuration is required yet because the current prototype is stateless.
+3. Trigger a deploy. Railway’s logs will show Poetry dependency installation from the build script followed by the FastAPI startup message.
+
+If you need to customise environment variables or scaling, edit `railway.toml` so the repo remains the source of truth for deployment settings.
+
 ## Configuration
 
 Default simulator configuration, cost presets, and risk limits are stored in [`config/defaults.toml`](config/defaults.toml). Update this file to change the seed values that the API surfaces.

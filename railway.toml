@@ -1,0 +1,14 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "bash ./scripts/railway_build.sh"
+
+[deploy]
+startCommand = "bash ./scripts/railway_start.sh"
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+
+[deploy.healthcheck]
+path = "/healthz"
+interval = 10
+timeout = 5
+retries = 3
