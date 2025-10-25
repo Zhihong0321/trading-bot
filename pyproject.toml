@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "EUR/USD 30-second signal simulator backend"
 authors = ["Trading Bot Team <dev@example.com>"]
 license = "MIT"
-readme = "README.md"
 packages = [{ include = "backend" }]
 
 [tool.poetry.dependencies]
