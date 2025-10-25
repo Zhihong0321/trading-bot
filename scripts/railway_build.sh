@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure pip is up to date before installing Poetry.
+# Ensure pip is available and up to date before installing Poetry.
+if ! python3 -m pip --version >/dev/null 2>&1; then
+  python3 -m ensurepip --upgrade
+fi
 python3 -m pip install --upgrade pip
 
 # Install Poetry if it is not already available in the image.
