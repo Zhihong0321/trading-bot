@@ -33,8 +33,8 @@ The repository ships with infrastructure files that keep Railway deployments det
 
 - [`nixpacks.toml`](nixpacks.toml) overrides the default Python plan so Nixpacks skips its preliminary `pip install .` (which expects a distributable package) and defers dependency resolution to Poetry.
 - [`railway.toml`](railway.toml) declares Railway’s builder, build, and start commands.
-- [`scripts/railway_build.sh`](scripts/railway_build.sh) bootstraps `pip` when absent, installs Poetry (if necessary), configures it to use the system environment, and installs the runtime dependencies.
-- [`scripts/railway_start.sh`](scripts/railway_start.sh) boots the FastAPI server with Uvicorn on the port Railway provides via the `PORT` environment variable.
+- [`scripts/railway_build.sh`](scripts/railway_build.sh) bootstraps user-local `pip`/Poetry when absent, keeps their binaries on `PATH`, and installs runtime dependencies into an in-project virtual environment.
+- [`scripts/railway_start.sh`](scripts/railway_start.sh) ensures the user-local Poetry binary is available before booting the FastAPI server with Uvicorn on Railway’s provided `PORT`.
 
 To deploy the service:
 
