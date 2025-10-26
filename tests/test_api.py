@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import time
 
 from fastapi.testclient import TestClient
 
@@ -28,7 +29,7 @@ def test_simulation_lifecycle() -> None:
     start_payload = {
         "dataset_id": "eurusd_sample",
         "start_ts": datetime.utcnow().isoformat() + "Z",
-        "speed": "1x",
+        "speed": "20x",
         "initial_fund": 10000,
         "leverage_cap": 10,
         "risk_pct": 0.7,
@@ -45,17 +46,26 @@ def test_simulation_lifecycle() -> None:
     assert response.status_code == 200
     run_id = response.json()["run_id"]
 
-    status = client.get("/sim/status")
-    assert status.status_code == 200
-    assert status.json()["run_id"] == run_id
+    time.sleep(0.3)
+
+    status_response = client.get("/sim/status")
+    assert status_response.status_code == 200
+    status_payload = status_response.json()
+    assert status_payload["run_id"] == run_id
+    assert status_payload["clock_ts"] is not None
+    assert "trades" in status_payload["kpis"]
 
     trades = client.get("/sim/trades", params={"run_id": run_id})
     assert trades.status_code == 200
-    assert trades.json()["trades"] == []
+    assert isinstance(trades.json()["trades"], list)
 
+    latest_status = client.get("/sim/status").json()
     stop = client.post("/sim/stop")
-    assert stop.status_code == 200
-    assert stop.json()["status"] == "stopped"
+    if latest_status["run_id"]:
+        assert stop.status_code == 200
+        assert stop.json()["status"] == "stopped"
+    else:
+        assert stop.status_code == 400
 
 
 
@@ -64,4 +74,5 @@ def test_signal_endpoint() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["asset"] == "EUR_USD"
-    assert data["signal_int"] == 0
+    assert -5 <= data["signal_int"] <= 5
+    assert "prev_signal_int" in data["meta"]

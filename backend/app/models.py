@@ -66,7 +66,9 @@ class SimulationStatus(BaseModel):
     clock_ts: Optional[datetime]
     equity: Optional[float]
     dd: Optional[float]
-    open_position: Optional[Dict[str, Optional[float]]]
+    open_position: Optional[Dict[str, object]]
+    market: Optional[Dict[str, float]] = None
+    signal: Optional[Dict[str, float]] = None
     kpis: Dict[str, float] = Field(default_factory=dict)
 
 

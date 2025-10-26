@@ -16,7 +16,10 @@ def start_simulation(request: SimulationStartRequest) -> dict[str, str]:
     if STATE.run_id is not None:
         raise HTTPException(status_code=400, detail="Simulation already running")
 
-    run_id = STATE.start(request)
+    try:
+        run_id = STATE.start(request)
+    except RuntimeError as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"run_id": run_id}
 
 

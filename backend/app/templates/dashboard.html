@@ -391,6 +391,10 @@
           <dd id="equity">—</dd>
           <dt>Drawdown</dt>
           <dd id="drawdown">—</dd>
+          <dt>Bid | Ask</dt>
+          <dd id="price">—</dd>
+          <dt>Signal</dt>
+          <dd id="signal">—</dd>
           <dt>Open position</dt>
           <dd id="open-position">—</dd>
           <dt>Trades</dt>
@@ -453,6 +457,8 @@
       const clockEl = document.getElementById("clock");
       const equityEl = document.getElementById("equity");
       const ddEl = document.getElementById("drawdown");
+      const priceEl = document.getElementById("price");
+      const signalEl = document.getElementById("signal");
       const openPosEl = document.getElementById("open-position");
       const tradeCountEl = document.getElementById("trade-count");
       const tradesBody = document.getElementById("trades-body");
@@ -607,10 +613,13 @@
         if (!status) {
           runStateEl.textContent = "Idle";
           runStateEl.style.background = "var(--accent-soft)";
+          runStateEl.style.color = "var(--accent)";
           runIdEl.textContent = "—";
           clockEl.textContent = "—";
           equityEl.textContent = "—";
           ddEl.textContent = "—";
+          priceEl.textContent = "—";
+          signalEl.textContent = "—";
           openPosEl.textContent = "—";
           tradeCountEl.textContent = "0";
           return;
@@ -624,6 +633,23 @@
         clockEl.textContent = status.clock_ts ? new Date(status.clock_ts).toLocaleString() : "—";
         equityEl.textContent = typeof status.equity === "number" ? status.equity.toFixed(2) + " USD" : "—";
         ddEl.textContent = typeof status.dd === "number" ? status.dd.toFixed(2) + " %" : "—";
+        if (status.market) {
+          const bid = typeof status.market.bid === "number" ? status.market.bid.toFixed(5) : "";
+          const ask = typeof status.market.ask === "number" ? status.market.ask.toFixed(5) : "";
+          const spread = typeof status.market.spread_pips === "number" ? status.market.spread_pips.toFixed(2) : "";
+          priceEl.textContent = bid && ask ? `${bid} | ${ask} (spread ${spread} pips)` : "—";
+        } else {
+          priceEl.textContent = "—";
+        }
+        if (status.signal) {
+          const intVal = status.signal.signal_int ?? 0;
+          const normVal = typeof status.signal.s_norm === "number" ? status.signal.s_norm.toFixed(2) : "0.00";
+          const confidence = typeof status.signal.confidence === "number" ? (status.signal.confidence * 100).toFixed(0) : null;
+          const confidenceText = confidence != null ? ` — ${confidence}% conf.` : "";
+          signalEl.textContent = `${intVal} (${normVal})${confidenceText}`;
+        } else {
+          signalEl.textContent = "—";
+        }
         openPosEl.textContent = status.open_position ? JSON.stringify(status.open_position) : "—";
         tradeCountEl.textContent = status.kpis?.trades?.toString() ?? "0";
       }

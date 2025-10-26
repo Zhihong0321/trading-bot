@@ -23,8 +23,11 @@ The API will be available at <http://127.0.0.1:8000>. Visiting the root path now
 
 - launch simulations with the configured defaults (or ad-hoc parameters),
 - choose the replay cadence (step mode through 20× fast-forward) via the new speed selector and quick buttons,
-- poll status snapshots in real time, and
+- watch the synthetic EUR/USD bid/ask feed, aggregate signal, and confidence update every bar,
+- monitor equity, drawdown, and open-position state as trades are generated, and
 - download the in-memory trade log.
+
+The current prototype replays a deterministic sample dataset so the clock, prices, signal breakdown, and trades advance consistently—useful for validating dashboards and deployment plumbing before wiring in real market data.
 
 Quick links to the generated docs remain available from the dashboard header.
 
