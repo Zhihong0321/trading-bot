@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python3", "gcc"]
+nixPkgs = ["python3", "python3Packages.virtualenv", "gcc"]
 
 [phases.install]
 cmds = [

@@ -31,9 +31,9 @@ poetry run pytest
 
 The repository ships with infrastructure files that keep Railway deployments deterministic:
 
-- [`nixpacks.toml`](nixpacks.toml) overrides the default Python plan so Nixpacks skips its preliminary `pip install .` (which expects a distributable package) and defers dependency resolution to Poetry.
+- [`nixpacks.toml`](nixpacks.toml) overrides the default Python plan so Nixpacks skips its preliminary `pip install .` (which expects a distributable package) and defers dependency resolution to Poetry. The setup phase brings in `python3Packages.virtualenv` so the build script can safely create a project-local virtualenv even on Nix-based images.
 - [`railway.toml`](railway.toml) declares Railway’s builder, build, and start commands.
-- [`scripts/railway_build.sh`](scripts/railway_build.sh) provisions an in-project virtual environment, installs Poetry inside it, and resolves runtime dependencies there during the build.
+- [`scripts/railway_build.sh`](scripts/railway_build.sh) provisions an in-project virtual environment with `virtualenv`, installs Poetry inside it, and resolves runtime dependencies there during the build.
 - [`scripts/railway_start.sh`](scripts/railway_start.sh) activates the pre-built virtual environment before starting Uvicorn on Railway’s provided `PORT`.
 
 To deploy the service:
