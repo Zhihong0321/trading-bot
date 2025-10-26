@@ -116,6 +116,36 @@
         gap: 0.75rem;
       }
 
+      .speed-controls {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .speed-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .speed-button {
+        background: rgba(148, 163, 184, 0.25);
+        color: var(--text);
+        border: 1px solid transparent;
+        padding: 0.5rem 0.9rem;
+        border-radius: 0.6rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .speed-button:hover {
+        background: rgba(148, 163, 184, 0.45);
+      }
+
+      .speed-button.active {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
       button {
         appearance: none;
         border: none;
@@ -253,6 +283,17 @@
             Start timestamp
             <input id="start-ts" type="datetime-local" required />
           </label>
+          <div class="speed-controls">
+            <label>
+              Replay speed
+              <select id="speed" required></select>
+            </label>
+            <div class="speed-buttons" role="group" aria-label="Replay speed presets">
+              {% for option in replay_speeds %}
+              <button type="button" class="speed-button" data-speed="{{ option.value }}">{{ option.label }}</button>
+              {% endfor %}
+            </div>
+          </div>
           <div class="inline">
             <label>
               Initial fund (USD)
@@ -384,9 +425,11 @@
     <script>
       const DEFAULTS = {{ defaults | tojson }};
       const COST_PRESETS = {{ cost_presets | tojson }};
+      const SPEED_OPTIONS = {{ replay_speeds | tojson }};
 
       const datasetSelect = document.getElementById("dataset");
       const startTsInput = document.getElementById("start-ts");
+      const speedSelect = document.getElementById("speed");
       const initialFundInput = document.getElementById("initial-fund");
       const leverageInput = document.getElementById("leverage");
       const riskInput = document.getElementById("risk");
@@ -402,6 +445,7 @@
       const eventEnabledInput = document.getElementById("event-enabled");
       const trailingStopInput = document.getElementById("trailing-stop");
       const rngSeedInput = document.getElementById("rng-seed");
+      const speedButtons = Array.from(document.querySelectorAll("[data-speed]"));
 
       const messageEl = document.getElementById("message");
       const runStateEl = document.getElementById("run-state");
@@ -446,10 +490,32 @@
         });
       }
 
+      function populateSpeedOptions() {
+        speedSelect.innerHTML = "";
+        SPEED_OPTIONS.forEach((option) => {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = option.label;
+          speedSelect.appendChild(opt);
+        });
+      }
+
+      function updateSpeedButtons(selected) {
+        speedButtons.forEach((button) => {
+          if (button.dataset.speed === selected) {
+            button.classList.add("active");
+          } else {
+            button.classList.remove("active");
+          }
+        });
+      }
+
       function applyDefaults() {
         populateSpreadOptions();
+        populateSpeedOptions();
         datasetSelect.innerHTML = `<option value="${DEFAULTS.dataset_id}">${DEFAULTS.dataset_id}</option>`;
         startTsInput.value = isoToLocalInput(DEFAULTS.start_ts);
+        speedSelect.value = DEFAULTS.speed;
         initialFundInput.value = DEFAULTS.initial_fund;
         leverageInput.value = DEFAULTS.leverage_cap;
         riskInput.value = DEFAULTS.risk_pct;
@@ -465,6 +531,7 @@
         eventEnabledInput.checked = DEFAULTS.event_guard.enabled;
         trailingStopInput.checked = DEFAULTS.trailing_stop;
         rngSeedInput.value = DEFAULTS.rng_seed;
+        updateSpeedButtons(speedSelect.value);
       }
 
       async function loadDatasets() {
@@ -499,7 +566,7 @@
         const payload = {
           dataset_id: datasetSelect.value,
           start_ts: localToIso(startTsInput.value),
-          speed: DEFAULTS.speed,
+          speed: speedSelect.value,
           initial_fund: Number(initialFundInput.value),
           leverage_cap: Number(leverageInput.value),
           risk_pct: Number(riskInput.value),
@@ -682,6 +749,18 @@
         } else {
           setMessage("No active simulation", "error");
         }
+      });
+
+      speedSelect.addEventListener("change", () => {
+        updateSpeedButtons(speedSelect.value);
+      });
+
+      speedButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const value = button.dataset.speed;
+          speedSelect.value = value;
+          updateSpeedButtons(value);
+        });
       });
 
       setInterval(fetchStatus, 8000);

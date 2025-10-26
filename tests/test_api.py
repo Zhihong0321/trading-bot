@@ -20,6 +20,8 @@ def test_root_page() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "EUR/USD Signal Simulator Dashboard" in response.text
+    assert "Replay speed" in response.text
+    assert "20×" in response.text
 
 
 def test_simulation_lifecycle() -> None:

@@ -22,6 +22,7 @@ poetry run uvicorn backend.app.main:app --reload
 The API will be available at <http://127.0.0.1:8000>. Visiting the root path now renders an interactive dashboard where you can:
 
 - launch simulations with the configured defaults (or ad-hoc parameters),
+- choose the replay cadence (step mode through 20× fast-forward) via the new speed selector and quick buttons,
 - poll status snapshots in real time, and
 - download the in-memory trade log.
 

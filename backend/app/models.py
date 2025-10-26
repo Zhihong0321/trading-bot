@@ -47,7 +47,7 @@ class EventGuardConfig(BaseModel):
 class SimulationStartRequest(BaseModel):
     dataset_id: str
     start_ts: datetime
-    speed: Literal["10x", "1x", "step"] = "1x"
+    speed: Literal["20x", "10x", "5x", "2x", "1x", "step"] = "1x"
     initial_fund: float = Field(gt=0)
     leverage_cap: float = Field(default=10.0, gt=0)
     risk_pct: float = Field(default=0.7, ge=0)

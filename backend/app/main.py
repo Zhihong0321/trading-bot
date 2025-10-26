@@ -14,6 +14,15 @@ from .config import CONFIG
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
+REPLAY_SPEED_OPTIONS = [
+    {"value": "step", "label": "Step"},
+    {"value": "1x", "label": "1×"},
+    {"value": "2x", "label": "2×"},
+    {"value": "5x", "label": "5×"},
+    {"value": "10x", "label": "10×"},
+    {"value": "20x", "label": "20×"},
+]
+
 app = FastAPI(
     title="EUR/USD Signal Simulator",
     version="0.1.0",
@@ -75,5 +84,6 @@ def root(request: Request) -> HTMLResponse:
             "defaults": _dashboard_defaults(),
             "cost_presets": CONFIG.costs,
             "risk": CONFIG.risk,
+            "replay_speeds": REPLAY_SPEED_OPTIONS,
         },
     )
