@@ -1,11 +1,18 @@
 """FastAPI application entrypoint."""
 from __future__ import annotations
 
-from fastapi import FastAPI
+from pathlib import Path
+from typing import Any, Dict
+
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from .api import configuration, signals, sim
 from .config import CONFIG
+
+TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
 app = FastAPI(
     title="EUR/USD Signal Simulator",
@@ -21,6 +28,36 @@ app.include_router(signals.router)
 app.include_router(configuration.router)
 
 
+def _dashboard_defaults() -> Dict[str, Any]:
+    """Return a dictionary of simulation defaults for the dashboard UI."""
+
+    defaults = CONFIG.simulation
+    return {
+        "dataset_id": defaults.dataset_id,
+        "start_ts": defaults.start_ts,
+        "speed": defaults.speed,
+        "initial_fund": defaults.initial_fund,
+        "leverage_cap": defaults.leverage_cap,
+        "risk_pct": defaults.risk_pct,
+        "entry_thresholds": {
+            "buy": defaults.entry_threshold_buy,
+            "sell": defaults.entry_threshold_sell,
+        },
+        "sl_atr_mult": defaults.sl_atr_mult,
+        "tp_mult": defaults.tp_mult,
+        "trailing_stop": defaults.trailing_stop,
+        "spread_model": defaults.spread_model,
+        "avg_spread_pips": defaults.avg_spread_pips,
+        "commission_model": defaults.commission_model,
+        "commission_per_million_per_side": defaults.commission_per_million_per_side,
+        "event_guard": {
+            "enabled": defaults.event_guard_enabled,
+            "window_sec": defaults.event_guard_window_sec,
+        },
+        "rng_seed": defaults.rng_seed,
+    }
+
+
 @app.get("/healthz")
 def healthcheck() -> dict[str, str]:
     """Simple health endpoint for infrastructure checks."""
@@ -28,69 +65,15 @@ def healthcheck() -> dict[str, str]:
 
 
 @app.get("/", response_class=HTMLResponse)
-def root() -> str:
-    """Provide a simple landing page for root requests."""
+def root(request: Request) -> HTMLResponse:
+    """Render the interactive dashboard."""
 
-    return """
-    <!DOCTYPE html>
-    <html lang=\"en\">
-      <head>
-        <meta charset=\"utf-8\" />
-        <title>EUR/USD Signal Simulator</title>
-        <style>
-          body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            margin: 0;
-            padding: 3rem 1.5rem;
-            background: #0f172a;
-            color: #e2e8f0;
-            display: flex;
-            min-height: 100vh;
-            align-items: center;
-            justify-content: center;
-          }
-          main {
-            max-width: 32rem;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            border-radius: 1rem;
-            padding: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.65);
-          }
-          h1 {
-            margin-top: 0;
-            font-size: 2rem;
-            letter-spacing: 0.04em;
-          }
-          p {
-            line-height: 1.6;
-          }
-          a {
-            color: #38bdf8;
-            text-decoration: none;
-            font-weight: 600;
-          }
-          a:hover {
-            text-decoration: underline;
-          }
-          ul {
-            padding-left: 1.25rem;
-          }
-        </style>
-      </head>
-      <body>
-        <main>
-          <h1>EUR/USD Signal Simulator API</h1>
-          <p>
-            The backend service is online. Use the links below to explore the
-            interactive documentation or run health checks.
-          </p>
-          <ul>
-            <li><a href=\"/docs\">Interactive API docs</a></li>
-            <li><a href=\"/redoc\">ReDoc reference</a></li>
-            <li><a href=\"/healthz\">Health status endpoint</a></li>
-          </ul>
-        </main>
-      </body>
-    </html>
-    """
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "defaults": _dashboard_defaults(),
+            "cost_presets": CONFIG.costs,
+            "risk": CONFIG.risk,
+        },
+    )

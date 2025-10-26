@@ -19,7 +19,7 @@ def test_healthcheck() -> None:
 def test_root_page() -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert "EUR/USD Signal Simulator API" in response.text
+    assert "EUR/USD Signal Simulator Dashboard" in response.text
 
 
 def test_simulation_lifecycle() -> None:

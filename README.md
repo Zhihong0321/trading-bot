@@ -19,7 +19,13 @@ poetry install
 poetry run uvicorn backend.app.main:app --reload
 ```
 
-The API will be available at <http://127.0.0.1:8000>. Visiting the root path renders a small status landing page with quick links to the generated docs at <http://127.0.0.1:8000/docs>.
+The API will be available at <http://127.0.0.1:8000>. Visiting the root path now renders an interactive dashboard where you can:
+
+- launch simulations with the configured defaults (or ad-hoc parameters),
+- poll status snapshots in real time, and
+- download the in-memory trade log.
+
+Quick links to the generated docs remain available from the dashboard header.
 
 ## Tests
 
