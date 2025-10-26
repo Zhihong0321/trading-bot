@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EUR/USD Data Import</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f172a;
+        --panel: rgba(15, 23, 42, 0.82);
+        --border: rgba(148, 163, 184, 0.35);
+        --accent: #38bdf8;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --danger: #f87171;
+        --success: #34d399;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: radial-gradient(
+            circle at top,
+            rgba(56, 189, 248, 0.08),
+            transparent 55%
+          ),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(15, 23, 42, 0.65);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      header nav a {
+        color: var(--text);
+        text-decoration: none;
+        margin-left: 1rem;
+        font-weight: 600;
+      }
+
+      header nav a:hover {
+        color: var(--accent);
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.75rem;
+        box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.9);
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 1rem;
+        letter-spacing: 0.02em;
+      }
+
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      input,
+      select {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 0.6rem;
+        padding: 0.65rem 0.75rem;
+        color: var(--text);
+        font-size: 0.95rem;
+      }
+
+      input:focus,
+      select:focus {
+        outline: 2px solid var(--accent);
+        border-color: transparent;
+      }
+
+      button {
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1.2rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        background: var(--accent);
+        color: #0f172a;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 30px -12px rgba(56, 189, 248, 0.7);
+      }
+
+      button.secondary {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text);
+      }
+
+      .inline {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      pre {
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        font-size: 0.9rem;
+        overflow-x: auto;
+        margin: 0;
+      }
+
+      .status {
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .status strong {
+        color: var(--accent);
+      }
+
+      .error {
+        color: var(--danger);
+        font-weight: 600;
+      }
+
+      .success {
+        color: var(--success);
+        font-weight: 600;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: flex-start;
+        }
+
+        header nav {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>EUR/USD Data Import</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">
+          Download Dukascopy ticks, build 30-second candles, and persist them to
+          Postgres.
+        </p>
+      </div>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/docs">Docs</a>
+        <a href="/healthz">Health</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Run Dukascopy import</h2>
+        <p class="status" style="margin-bottom: 1.2rem;">
+          The Dukascopy importer depends on the
+          <code>duka</code> CLI. Install it in the runtime environment with
+          <code>pip install duka==0.2.3</code> before starting an import job.
+        </p>
+        <form id="import-form">
+          <div class="inline">
+            <label>
+              Start (UTC)
+              <input
+                type="datetime-local"
+                id="import-start"
+                name="start"
+                required
+              />
+            </label>
+            <label>
+              End (UTC)
+              <input
+                type="datetime-local"
+                id="import-end"
+                name="end"
+                required
+              />
+            </label>
+          </div>
+          <div class="inline">
+            <label>
+              Downsample policy
+              <select id="import-policy" name="policy">
+                <option value="tickcount">Tick count (default)</option>
+                <option value="sumsize">Sum bid/ask size</option>
+              </select>
+            </label>
+            <label style="align-self: flex-end; display: flex; align-items: center; gap: 0.6rem;">
+              <input type="checkbox" id="import-dry-run" name="dry_run" />
+              Dry run (validate without storing)
+            </label>
+          </div>
+          <button type="submit">Start import</button>
+        </form>
+        <div id="import-result" class="status" style="margin-top: 1.25rem;"></div>
+      </section>
+
+      <section>
+        <h2>Stored dataset summary</h2>
+        <button type="button" class="secondary" id="refresh-summary">
+          Refresh summary
+        </button>
+        <pre id="summary-output" style="margin-top: 1rem;">No data fetched yet.</pre>
+      </section>
+
+      <section>
+        <h2>Validate stored candles</h2>
+        <form id="validate-form">
+          <div class="inline">
+            <label>
+              Start (optional)
+              <input type="datetime-local" id="validate-start" name="start" />
+            </label>
+            <label>
+              End (optional)
+              <input type="datetime-local" id="validate-end" name="end" />
+            </label>
+          </div>
+          <button type="submit" class="secondary">Run validation</button>
+        </form>
+        <div id="validate-result" class="status" style="margin-top: 1.25rem;"></div>
+      </section>
+    </main>
+
+    <script>
+      const defaults = JSON.parse('{{ defaults | tojson | safe }}');
+
+      function toLocalInputValue(isoString) {
+        if (!isoString) return '';
+        const dt = new Date(isoString);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(
+          dt.getUTCDate()
+        )}T${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
+      }
+
+      document.getElementById('import-start').value = toLocalInputValue(defaults.start);
+      document.getElementById('import-end').value = toLocalInputValue(defaults.end);
+
+      async function handleImport(event) {
+        event.preventDefault();
+        const status = document.getElementById('import-result');
+        status.textContent = 'Running import…';
+        status.className = 'status';
+
+        const start = new Date(document.getElementById('import-start').value + 'Z');
+        const end = new Date(document.getElementById('import-end').value + 'Z');
+        if (!start || !end) {
+          status.textContent = 'Start and end times are required.';
+          status.classList.add('error');
+          return;
+        }
+
+        try {
+          const response = await fetch('/data-import/dukascopy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              start: start.toISOString(),
+              end: end.toISOString(),
+              downsample_policy: document.getElementById('import-policy').value,
+              dry_run: document.getElementById('import-dry-run').checked,
+            }),
+          });
+
+          if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            status.textContent = problem.detail || 'Import failed.';
+            status.classList.add('error');
+            return;
+          }
+
+          const data = await response.json();
+          status.innerHTML = `Imported <strong>${data.rows.toLocaleString()}</strong> bars.` +
+            (data.dry_run
+              ? ' Dry run only; nothing stored.'
+              : ` Stored/updated: <strong>${data.stored_rows.toLocaleString()}</strong>.`);
+          status.classList.add('success');
+          await refreshSummary();
+        } catch (error) {
+          status.textContent = 'Unexpected error: ' + (error.message || error);
+          status.classList.add('error');
+        }
+      }
+
+      async function refreshSummary() {
+        const output = document.getElementById('summary-output');
+        output.textContent = 'Loading…';
+        try {
+          const response = await fetch('/data-import/summary');
+          if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            output.textContent = problem.detail || 'Failed to fetch summary.';
+            return;
+          }
+          const data = await response.json();
+          if (data.rows === 0) {
+            output.textContent = 'No candles stored yet.';
+            return;
+          }
+          output.textContent = JSON.stringify(
+            {
+              rows: data.rows,
+              start_timestamp: data.start_timestamp,
+              end_timestamp: data.end_timestamp,
+            },
+            null,
+            2,
+          );
+        } catch (error) {
+          output.textContent = 'Unexpected error: ' + (error.message || error);
+        }
+      }
+
+      async function handleValidation(event) {
+        event.preventDefault();
+        const status = document.getElementById('validate-result');
+        status.textContent = 'Validating…';
+        status.className = 'status';
+
+        const payload = {};
+        const start = document.getElementById('validate-start').value;
+        const end = document.getElementById('validate-end').value;
+        if (start) payload.start = new Date(start + 'Z').toISOString();
+        if (end) payload.end = new Date(end + 'Z').toISOString();
+
+        try {
+          const response = await fetch('/data-import/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            status.textContent = problem.detail || 'Validation failed.';
+            status.classList.add('error');
+            return;
+          }
+          const data = await response.json();
+          status.innerHTML = `Validated <strong>${data.rows.toLocaleString()}</strong> bars.`;
+          status.classList.add('success');
+        } catch (error) {
+          status.textContent = 'Unexpected error: ' + (error.message || error);
+          status.classList.add('error');
+        }
+      }
+
+      document
+        .getElementById('import-form')
+        .addEventListener('submit', handleImport);
+      document
+        .getElementById('validate-form')
+        .addEventListener('submit', handleValidation);
+      document
+        .getElementById('refresh-summary')
+        .addEventListener('click', refreshSummary);
+
+      refreshSummary();
+    </script>
+  </body>
+</html>

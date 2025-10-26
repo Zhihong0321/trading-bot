@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["python3", "python3Packages.virtualenv", "gcc"]
+
+[phases.install]
+cmds = [
+  "echo 'Skipping default pip install; Poetry handled in build script'"
+]
+
+[phases.build]
+cmds = [
+  "bash ./scripts/railway_build.sh"
+]
+
+[start]
+cmd = "bash ./scripts/railway_start.sh"
