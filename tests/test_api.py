@@ -1,11 +1,20 @@
 from __future__ import annotations
 
-from datetime import datetime
+import os
+import tempfile
 import time
+from datetime import datetime
+
+import pandas as pd
+import pytest
 
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
+_fd, _db_path = tempfile.mkstemp(prefix="eurusd_test_", suffix=".db")
+os.close(_fd)
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{_db_path}")
+
+from backend.app.main import app  # noqa: E402  pylint: disable=C0413
 
 client = TestClient(app)
 
@@ -76,3 +85,64 @@ def test_signal_endpoint() -> None:
     assert data["asset"] == "EUR_USD"
     assert -5 <= data["signal_int"] <= 5
     assert "prev_signal_int" in data["meta"]
+
+
+def test_data_import_page() -> None:
+    response = client.get("/data-import")
+    assert response.status_code == 200
+    assert "EUR/USD Data Import" in response.text
+    assert "Run Dukascopy import" in response.text
+
+
+@pytest.fixture
+def stubbed_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.app.api import data_import as data_api
+
+    class _FakeProvider:
+        def make_bars(self, start: datetime, end: datetime) -> pd.DataFrame:
+            base = pd.date_range(start="2024-01-01T00:00:30Z", periods=4, freq="30S")
+            return pd.DataFrame(
+                {
+                    "timestamp": base,
+                    "bid_open": [1.08, 1.0805, 1.0810, 1.0815],
+                    "bid_high": [1.081, 1.081, 1.0815, 1.082],
+                    "bid_low": [1.0795, 1.0800, 1.0805, 1.0810],
+                    "bid_close": [1.0805, 1.0810, 1.0815, 1.0818],
+                    "ask_open": [1.0802, 1.0807, 1.0812, 1.0817],
+                    "ask_high": [1.0812, 1.0814, 1.0819, 1.0824],
+                    "ask_low": [1.0797, 1.0802, 1.0807, 1.0812],
+                    "ask_close": [1.0807, 1.0812, 1.0817, 1.0820],
+                    "volume": [25, 30, 28, 32],
+                }
+            )
+
+    monkeypatch.setattr(data_api, "_get_provider", lambda policy: _FakeProvider())
+
+
+def test_data_import_flow(stubbed_provider: None) -> None:
+    start_ts = "2024-01-01T00:00:00Z"
+    end_ts = "2024-01-01T00:02:00Z"
+
+    response = client.post(
+        "/data-import/dukascopy",
+        json={
+            "start": start_ts,
+            "end": end_ts,
+            "downsample_policy": "tickcount",
+            "dry_run": False,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["rows"] == 4
+    assert payload["stored_rows"] >= 4
+
+    summary = client.get("/data-import/summary")
+    assert summary.status_code == 200
+    summary_payload = summary.json()
+    assert summary_payload["rows"] >= 4
+
+    validation = client.post("/data-import/validate", json={})
+    assert validation.status_code == 200
+    validation_payload = validation.json()
+    assert validation_payload["valid"] is True

@@ -1,6 +1,7 @@
 """FastAPI application entrypoint."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
 
@@ -8,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from .api import configuration, signals, sim
+from .api import configuration, data_import, signals, sim
 from .config import CONFIG
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -35,6 +36,7 @@ app = FastAPI(
 app.include_router(sim.router)
 app.include_router(signals.router)
 app.include_router(configuration.router)
+app.include_router(data_import.router)
 
 
 def _dashboard_defaults() -> Dict[str, Any]:
@@ -67,6 +69,17 @@ def _dashboard_defaults() -> Dict[str, Any]:
     }
 
 
+def _import_defaults() -> Dict[str, str]:
+    """Return default window suggestions for the data import UI."""
+
+    end = datetime.now(timezone.utc).replace(microsecond=0)
+    start = (end - timedelta(days=7)).replace(microsecond=0)
+    return {
+        "start": start.isoformat().replace("+00:00", "Z"),
+        "end": end.isoformat().replace("+00:00", "Z"),
+    }
+
+
 @app.get("/healthz")
 def healthcheck() -> dict[str, str]:
     """Simple health endpoint for infrastructure checks."""
@@ -85,5 +98,18 @@ def root(request: Request) -> HTMLResponse:
             "cost_presets": CONFIG.costs,
             "risk": CONFIG.risk,
             "replay_speeds": REPLAY_SPEED_OPTIONS,
+        },
+    )
+
+
+@app.get("/data-import", response_class=HTMLResponse)
+def data_import_page(request: Request) -> HTMLResponse:
+    """Render the data import management interface."""
+
+    return templates.TemplateResponse(
+        "data_import.html",
+        {
+            "request": request,
+            "defaults": _import_defaults(),
         },
     )

@@ -31,6 +31,19 @@ The current prototype replays a deterministic sample dataset so the clock, price
 
 Quick links to the generated docs remain available from the dashboard header.
 
+### Historical data ingestion UI
+
+Navigate to `/data-import` to drive Dukascopy backfills directly from the web UI:
+
+- set the import window, volume aggregation policy, and whether to run a dry run or persist immediately;
+- trigger the Dukascopy download/resample workflow, which validates the 30-second bars before optionally storing them in Postgres;
+- inspect a rolling summary of the stored dataset; and
+- re-run validation against a chosen slice of previously ingested candles.
+
+The page surfaces detailed success/error messaging so failed imports can be diagnosed quickly.
+
+To enable persistence you **must** expose a Postgres connection string via `DATABASE_URL` (e.g. `postgresql+psycopg://user:pass@host:port/dbname`). When unset, imports operate in dry-run mode only. Local development can point `DATABASE_URL` at a temporary SQLite database (`sqlite:///./eurusd.db`) if Postgres is unavailable, but Railway deploys should use the managed Postgres instance you provision.
+
 ## Tests
 
 ```bash
@@ -49,7 +62,7 @@ The repository ships with infrastructure files that keep Railway deployments det
 To deploy the service:
 
 1. In Railway, create a new project (or open an existing one) and add an empty service linked to this repository. Railway will automatically read `railway.toml` and wire up the build/start commands above.
-2. (Optional, but recommended) Add a managed Postgres database to the project so the simulator can persist state in future milestones. No application configuration is required yet because the current prototype is stateless.
+2. Provision a managed Postgres database (or connect to an existing one) and set the `DATABASE_URL` environment variable on the service. The data import UI and future persistence features rely on this connection string during deploys.
 3. Trigger a deploy. Railway’s logs will show the virtual environment creation, dependency installation via Poetry, and the FastAPI startup message.
 
 If you need to customise environment variables or scaling, edit `railway.toml` so the repo remains the source of truth for deployment settings.
