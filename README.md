@@ -41,6 +41,8 @@ Navigate to `/data-import` to drive Dukascopy backfills directly from the web UI
 - inspect a rolling summary of the stored dataset; and
 - re-run validation against a chosen slice of previously ingested candles.
 
+> **Note:** The Dukascopy workflow depends on the [`duka`](https://pypi.org/project/duka/) CLI. Install it in the runtime environment with `pip install duka==0.2.3` before triggering an import; the UI surfaces the same reminder and the API will return a 503 with installation instructions if the CLI is missing.
+
 The page surfaces detailed success/error messaging so failed imports can be diagnosed quickly. If the `duka` CLI is missing, the API will respond with a `503 Service Unavailable` error that explains how to install it; add the package to your local environment or Railway build step before retrying.
 
 To enable persistence you **must** expose a Postgres connection string via `DATABASE_URL` (e.g. `postgresql+psycopg://user:pass@host:port/dbname`). When unset, imports operate in dry-run mode only. Local development can point `DATABASE_URL` at a temporary SQLite database (`sqlite:///./eurusd.db`) if Postgres is unavailable, but Railway deploys should use the managed Postgres instance you provision.

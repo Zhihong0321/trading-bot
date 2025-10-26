@@ -92,6 +92,7 @@ def test_data_import_page() -> None:
     assert response.status_code == 200
     assert "EUR/USD Data Import" in response.text
     assert "Run Dukascopy import" in response.text
+    assert "pip install duka==0.2.3" in response.text
 
 
 @pytest.fixture
