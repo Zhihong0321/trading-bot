@@ -24,3 +24,14 @@ app.include_router(configuration.router)
 def healthcheck() -> dict[str, str]:
     """Simple health endpoint for infrastructure checks."""
     return {"status": "ok", "dataset": CONFIG.simulation.dataset_id}
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    """Provide a simple landing response for root requests."""
+
+    return {
+        "message": "EUR/USD Signal Simulator backend is running.",
+        "docs": "/docs",
+        "status": "/healthz",
+    }
