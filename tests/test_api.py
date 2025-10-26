@@ -16,6 +16,12 @@ def test_healthcheck() -> None:
     assert data["status"] == "ok"
 
 
+def test_root_page() -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "EUR/USD Signal Simulator API" in response.text
+
+
 def test_simulation_lifecycle() -> None:
     start_payload = {
         "dataset_id": "eurusd_sample",

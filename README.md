@@ -19,7 +19,7 @@ poetry install
 poetry run uvicorn backend.app.main:app --reload
 ```
 
-The API will be available at <http://127.0.0.1:8000>. Open <http://127.0.0.1:8000/docs> to interact with the automatically generated Swagger UI.
+The API will be available at <http://127.0.0.1:8000>. Visiting the root path renders a small status landing page with quick links to the generated docs at <http://127.0.0.1:8000/docs>.
 
 ## Tests
 
