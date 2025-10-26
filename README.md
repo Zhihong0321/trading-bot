@@ -6,6 +6,7 @@ Prototype backend for the EUR/USD 30-second signal simulator described in the pr
 
 - Python 3.11+
 - [Poetry](https://python-poetry.org/) for dependency management
+- (Optional, required for Dukascopy imports) Install the [`duka`](https://pypi.org/project/duka/) CLI in your environment via `pip install duka==0.2.3`. The package is not pinned in Poetry because it currently lacks Python 3.12 wheels, so install it manually anywhere you plan to run backfills.
 
 ## Setup
 
@@ -40,7 +41,7 @@ Navigate to `/data-import` to drive Dukascopy backfills directly from the web UI
 - inspect a rolling summary of the stored dataset; and
 - re-run validation against a chosen slice of previously ingested candles.
 
-The page surfaces detailed success/error messaging so failed imports can be diagnosed quickly.
+The page surfaces detailed success/error messaging so failed imports can be diagnosed quickly. If the `duka` CLI is missing, the API will respond with a `503 Service Unavailable` error that explains how to install it; add the package to your local environment or Railway build step before retrying.
 
 To enable persistence you **must** expose a Postgres connection string via `DATABASE_URL` (e.g. `postgresql+psycopg://user:pass@host:port/dbname`). When unset, imports operate in dry-run mode only. Local development can point `DATABASE_URL` at a temporary SQLite database (`sqlite:///./eurusd.db`) if Postgres is unavailable, but Railway deploys should use the managed Postgres instance you provision.
 

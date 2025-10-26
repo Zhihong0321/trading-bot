@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import logging
 import os
 import subprocess
@@ -353,6 +354,11 @@ class DukascopyProvider(BaseProvider):
     def __init__(self, config: DukascopyConfig) -> None:
         super().__init__()
         self.config = config
+        if importlib.util.find_spec("duka") is None:
+            raise RuntimeError(
+                "The Dukascopy importer requires the 'duka' package. Install it with `pip install duka==0.2.3` "
+                "before running a Dukascopy ingestion job."
+            )
 
     @retry(
         reraise=True,

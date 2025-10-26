@@ -146,3 +146,22 @@ def test_data_import_flow(stubbed_provider: None) -> None:
     assert validation.status_code == 200
     validation_payload = validation.json()
     assert validation_payload["valid"] is True
+
+
+def test_data_import_missing_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(_policy: str) -> None:
+        raise RuntimeError("install duka")
+
+    monkeypatch.setattr(data_api, "_get_provider", _raise)
+
+    response = client.post(
+        "/data-import/dukascopy",
+        json={
+            "start": "2024-01-01T00:00:00Z",
+            "end": "2024-01-01T00:01:00Z",
+            "downsample_policy": "tickcount",
+        },
+    )
+
+    assert response.status_code == 503
+    assert "install duka" in response.json()["detail"].lower()

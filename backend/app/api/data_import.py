@@ -54,8 +54,15 @@ def _get_provider(policy: Literal["tickcount", "sumsize"]) -> DukascopyProvider:
 def import_from_dukascopy(payload: ImportRequest) -> ImportResponse:
     """Fetch, validate, and optionally persist Dukascopy EUR/USD data."""
 
-    provider = _get_provider(payload.downsample_policy)
-    frame = provider.make_bars(payload.start, payload.end)
+    try:
+        provider = _get_provider(payload.downsample_policy)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    try:
+        frame = provider.make_bars(payload.start, payload.end)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     if frame.empty:
         raise HTTPException(status_code=404, detail="No candles returned for the requested range.")
 
