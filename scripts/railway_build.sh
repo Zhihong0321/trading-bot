@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure user-local binaries are on PATH for subsequent commands.
-export PATH="${HOME}/.local/bin:${PATH}"
+# Ensure we are in project root
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${PROJECT_ROOT}"
 
-# Ensure pip is available in the user environment before installing Poetry.
-if ! python3 -m pip --version >/dev/null 2>&1; then
-  python3 -m ensurepip --upgrade --default-pip --user
-fi
-python3 -m pip install --upgrade --user pip
+VENV_DIR="${PROJECT_ROOT}/.venv"
 
-# Install Poetry into the user environment if it is not already available.
-if ! command -v poetry >/dev/null 2>&1; then
-  python3 -m pip install --user "poetry>=1.7,<1.9"
+# Create a local virtual environment for dependencies if it does not exist.
+if [ ! -d "${VENV_DIR}" ]; then
+  python3 -m venv "${VENV_DIR}"
 fi
 
-# Create isolated virtual environments for dependencies inside the project directory.
-poetry config virtualenvs.in-project true
+# Activate the virtual environment.
+# shellcheck disable=SC1090
+source "${VENV_DIR}/bin/activate"
 
-# Install the application dependencies without developer tooling for lean deploy images.
+# Upgrade pip and install Poetry inside the virtual environment.
+pip install --upgrade pip
+pip install "poetry>=1.7,<1.9"
+
+# Install application dependencies into the same virtual environment.
+poetry config virtualenvs.create false
 poetry install --no-root --without dev --no-interaction --no-ansi

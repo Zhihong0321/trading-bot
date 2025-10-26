@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Railway provides the listening port via the PORT environment variable.
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VENV_DIR="${PROJECT_ROOT}/.venv"
+
+if [ ! -d "${VENV_DIR}" ]; then
+  echo "Virtual environment not found at ${VENV_DIR}. Did the build step run?" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+source "${VENV_DIR}/bin/activate"
+
 PORT="${PORT:-8000}"
 
-# Ensure user-local Poetry installs are available on PATH.
-export PATH="${HOME}/.local/bin:${PATH}"
-
-exec poetry run uvicorn backend.app.main:app --host 0.0.0.0 --port "${PORT}"
+exec uvicorn backend.app.main:app --host 0.0.0.0 --port "${PORT}"

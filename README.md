@@ -33,14 +33,14 @@ The repository ships with infrastructure files that keep Railway deployments det
 
 - [`nixpacks.toml`](nixpacks.toml) overrides the default Python plan so Nixpacks skips its preliminary `pip install .` (which expects a distributable package) and defers dependency resolution to Poetry.
 - [`railway.toml`](railway.toml) declares Railway’s builder, build, and start commands.
-- [`scripts/railway_build.sh`](scripts/railway_build.sh) bootstraps user-local `pip`/Poetry when absent, keeps their binaries on `PATH`, and installs runtime dependencies into an in-project virtual environment.
-- [`scripts/railway_start.sh`](scripts/railway_start.sh) ensures the user-local Poetry binary is available before booting the FastAPI server with Uvicorn on Railway’s provided `PORT`.
+- [`scripts/railway_build.sh`](scripts/railway_build.sh) provisions an in-project virtual environment, installs Poetry inside it, and resolves runtime dependencies there during the build.
+- [`scripts/railway_start.sh`](scripts/railway_start.sh) activates the pre-built virtual environment before starting Uvicorn on Railway’s provided `PORT`.
 
 To deploy the service:
 
 1. In Railway, create a new project (or open an existing one) and add an empty service linked to this repository. Railway will automatically read `railway.toml` and wire up the build/start commands above.
 2. (Optional, but recommended) Add a managed Postgres database to the project so the simulator can persist state in future milestones. No application configuration is required yet because the current prototype is stateless.
-3. Trigger a deploy. Railway’s logs will show Poetry dependency installation from the build script followed by the FastAPI startup message.
+3. Trigger a deploy. Railway’s logs will show the virtual environment creation, dependency installation via Poetry, and the FastAPI startup message.
 
 If you need to customise environment variables or scaling, edit `railway.toml` so the repo remains the source of truth for deployment settings.
 
