@@ -7,8 +7,6 @@ import logging
 import os
 from typing import Dict
 
-import aiohttp
-
 from trading_bot.config import AppConfig, load_config
 from trading_bot.data.feed import BINANCE_REST, TESTNET_REST, fetch_historical_candles, stream_market_data
 from trading_bot.state import BotContext, BotState
@@ -33,8 +31,7 @@ class TradingBot:
         """Load historical candles to seed indicators."""
 
         base_url = TESTNET_REST if self.config.environment == "testnet" else BINANCE_REST
-        async with aiohttp.ClientSession() as session:
-            candles = await fetch_historical_candles(session, self.config.strategy.symbol, limit=50, base_url=base_url)
+        candles = await fetch_historical_candles(self.config.strategy.symbol, limit=50, base_url=base_url)
         for candle in candles:
             payload = {
                 "k": {

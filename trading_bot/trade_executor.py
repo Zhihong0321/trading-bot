@@ -8,8 +8,6 @@ import time
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-import aiohttp
-
 from trading_bot.config import AppConfig
 from trading_bot.state import BotContext, BotState
 
@@ -41,15 +39,12 @@ class TradeExecutor:
     def __init__(self, config: AppConfig, context: BotContext):
         self.config = config
         self.context = context
-        self.session: Optional[aiohttp.ClientSession] = None
 
     async def __aenter__(self) -> "TradeExecutor":
-        self.session = aiohttp.ClientSession()
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
-        if self.session:
-            await self.session.close()
+        return None
 
     async def place_limit_buy(self, price: float, quantity: float) -> Order:
         LOGGER.info("Placing limit buy order at %.2f for quantity %.5f", price, quantity)
