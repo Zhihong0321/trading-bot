@@ -27,6 +27,8 @@ and a clear separation between strategy evaluation and execution.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
+# or install the package in editable mode
 pip install -e .
 ```
 

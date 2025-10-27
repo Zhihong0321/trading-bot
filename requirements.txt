@@ -1,0 +1,4 @@
+numpy>=1.26.0
+pydantic>=2.5.0
+tenacity>=8.2.0
+aiohttp>=3.9.0
