@@ -44,15 +44,17 @@ class RiskManager:
         quantity = quote_size / price
         return round(quantity, 5)  # Binance lot size for ETHUSDT spot is 0.00001
 
-    def start_cooldown(self, was_win: bool) -> None:
+    def start_cooldown(self, was_win: bool, *, now: float | None = None) -> None:
         duration = (
             self.config.risk.cooldown_after_win if was_win else self.config.risk.cooldown_after_loss
         )
-        self.context.cooldown_expires = time.time() + duration
+        base = now if now is not None else time.time()
+        self.context.cooldown_expires = base + duration
         self.context.transition(BotState.COOLDOWN)
 
-    def cooldown_elapsed(self) -> bool:
-        return time.time() >= self.context.cooldown_expires
+    def cooldown_elapsed(self, *, now: float | None = None) -> bool:
+        current = now if now is not None else time.time()
+        return current >= self.context.cooldown_expires
 
 
 __all__ = ["RiskManager"]

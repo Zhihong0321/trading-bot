@@ -78,6 +78,62 @@ async def fetch_historical_candles(
     return candles
 
 
+async def fetch_candles_between(
+    symbol: str,
+    start_time: datetime,
+    end_time: datetime,
+    *,
+    base_url: str = BINANCE_REST,
+) -> List[Candle]:
+    """Fetch candles between the provided timestamps (inclusive)."""
+
+    if end_time <= start_time:
+        return []
+
+    endpoint = f"{base_url}/api/v3/klines"
+    start_ms = int(start_time.timestamp() * 1000)
+    end_ms = int(end_time.timestamp() * 1000)
+    candles: List[Candle] = []
+    current_start = start_ms
+
+    while current_start < end_ms:
+        params = {
+            "symbol": symbol,
+            "interval": "1m",
+            "limit": 1000,
+            "startTime": current_start,
+            "endTime": end_ms,
+        }
+        batch = await _async_json_request(endpoint, params=params)
+        if not batch:
+            break
+
+        for entry in batch:
+            open_time = int(entry[0])
+            if open_time < start_ms or open_time > end_ms:
+                continue
+            candles.append(
+                Candle(
+                    open_time=datetime.fromtimestamp(open_time / 1000),
+                    open=float(entry[1]),
+                    high=float(entry[2]),
+                    low=float(entry[3]),
+                    close=float(entry[4]),
+                    volume=float(entry[5]),
+                )
+            )
+
+        last_close = int(batch[-1][6])
+        next_start = last_close + 1
+        if next_start <= current_start:
+            break
+        current_start = next_start
+        if len(batch) < 1000:
+            break
+
+    return candles
+
+
 async def _retryable_json(url: str, params: Dict[str, Any] | None = None) -> Any:
     async for attempt in AsyncRetrying(
         retry=retry_if_exception_type((urllib.error.URLError, TimeoutError)),
@@ -153,4 +209,10 @@ async def check_ping_latency(base_url: str = BINANCE_REST) -> float:
     return (end - start).total_seconds() * 1000
 
 
-__all__ = ["Candle", "fetch_historical_candles", "stream_market_data", "check_ping_latency"]
+__all__ = [
+    "Candle",
+    "fetch_historical_candles",
+    "fetch_candles_between",
+    "stream_market_data",
+    "check_ping_latency",
+]

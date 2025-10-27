@@ -20,7 +20,8 @@ and a clear separation between strategy evaluation and execution.
   placeholder logic for OCO orders, and position timeout handling.
 - **Configuration** – Pydantic models mirroring the specification parameters
   (capital, risk per trade, limits, monitoring thresholds, etc.).
-- **Logging Utilities** – Simple helper for persistent logging to disk.
+- **Logging & Simulation** – Persistent logging helper plus an interactive
+  backtesting engine surfaced through the deployment dashboard.
 
 ## Getting Started
 
@@ -48,9 +49,18 @@ python main.py
 
 The entry point now hosts a lightweight HTTP status server (compatible with
 Railway's platform expectations) in front of the background trading loop. The
-root path (`GET /`) renders a live HTML dashboard, while `/status` and
-`/healthz` expose JSON snapshots describing the bot state, balance, and last
-update time.
+root path (`GET /`) renders an interactive HTML dashboard with:
+
+- Real-time bot status cards showing balance, last price, and environment.
+- A historical simulation form that lets you choose a start/end window (up to
+  seven days), tweak risk parameters, and launch a backtest directly from the
+  browser.
+- Tabular trade logs and JSON exports for each simulation run, allowing you to
+  review entry/exit timing, PnL, and drawdowns.
+
+Programmatic probes remain available via `/status` (JSON snapshot) and
+`/healthz` (liveness). The latest simulation result can be fetched from
+`/simulation.json`.
 
 By default the server listens on `PORT=8000`; Railway will inject the correct
 port via environment variables during deployment. The bot operates against the
@@ -68,8 +78,8 @@ and analytics to your existing Railway database service.
 1. Finish the authenticated order placement logic inside `TradeExecutor`.
 2. Persist trades, metrics, and logs for daily review.
 3. Add unit tests covering the strategy and indicator components.
-4. Build a dashboard (CLI or web) to monitor latency, PnL, and connection
-   health in real time.
+4. Persist simulation results to disk or a database for longitudinal analysis
+   and comparison across parameter sweeps.
 
 > **Disclaimer:** This code is provided for educational purposes. Trading
 > cryptocurrencies carries risk; run extensive paper trading before deploying

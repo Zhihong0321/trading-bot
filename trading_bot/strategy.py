@@ -88,10 +88,17 @@ class Strategy:
             atr_pct=atr_pct,
         )
 
-    def entry_allowed(self, snapshot: MarketSnapshot, balances: Dict[str, float]) -> bool:
+    def entry_allowed(
+        self,
+        snapshot: MarketSnapshot,
+        balances: Dict[str, float],
+        *,
+        now: float | None = None,
+    ) -> bool:
         filters = self.config.filters
-        now = snapshot.candle_close_time.time()
-        if not (filters.active_hours_start <= now <= filters.active_hours_end):
+        current_ts = now if now is not None else time.time()
+        clock_time = snapshot.candle_close_time.time()
+        if not (filters.active_hours_start <= clock_time <= filters.active_hours_end):
             return False
         if snapshot.spread_pct > filters.max_spread_pct:
             return False
@@ -109,13 +116,13 @@ class Strategy:
             return False
         if snapshot.price <= float(balances.get("previous_candle_high", 0)):
             return False
-        if time.time() - self.last_trade_timestamp < 180:
+        if current_ts - self.last_trade_timestamp < 180:
             return False
         if not self.risk_manager.can_take_trade(balances.get("USDT", 0.0)):
             return False
         return True
 
-    def create_entry(self, snapshot: MarketSnapshot) -> Position:
+    def create_entry(self, snapshot: MarketSnapshot, *, now: float | None = None) -> Position:
         price = snapshot.bid
         quantity = self.risk_manager.position_size(price)
         take_profit = price * (1 + self.config.risk.take_profit_pct)
@@ -124,7 +131,7 @@ class Strategy:
             symbol=self.config.strategy.symbol,
             entry_price=price,
             quantity=quantity,
-            timestamp=time.time(),
+            timestamp=now if now is not None else time.time(),
             take_profit=take_profit,
             stop_loss=stop_loss,
         )
@@ -133,16 +140,17 @@ class Strategy:
         LOGGER.info("Generated entry signal at %s", snapshot.candle_close_time)
         return position
 
-    def on_trade_result(self, pnl: float, was_win: bool) -> None:
+    def on_trade_result(self, pnl: float, was_win: bool, *, now: float | None = None) -> None:
         self.context.stats.register_win(pnl) if was_win else self.context.stats.register_loss(pnl)
-        self.last_trade_timestamp = time.time()
+        current_ts = now if now is not None else time.time()
+        self.last_trade_timestamp = current_ts
         self.last_result = "win" if was_win else "loss"
-        self.risk_manager.start_cooldown(was_win)
+        self.risk_manager.start_cooldown(was_win, now=current_ts)
 
-    def cooldown_ready(self) -> bool:
+    def cooldown_ready(self, *, now: float | None = None) -> bool:
         if self.context.state != BotState.COOLDOWN:
             return True
-        if self.risk_manager.cooldown_elapsed():
+        if self.risk_manager.cooldown_elapsed(now=now):
             self.context.transition(BotState.IDLE)
             return True
         return False

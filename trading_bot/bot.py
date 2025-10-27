@@ -90,6 +90,7 @@ class TradingBot:
                     continue
                 previous_high = float(self.balances.get("last_candle_high", 0.0))
                 snapshot = self.strategy.update_indicators(payload)
+                candle_ts = snapshot.candle_close_time.timestamp()
                 self.balances["last_candle_high"] = float(payload["k"]["h"])
                 self.balances["previous_candle_high"] = previous_high
                 self._update_status(
@@ -100,7 +101,7 @@ class TradingBot:
                     open_positions=1 if self.context.position else 0,
                 )
 
-                if not self.strategy.cooldown_ready():
+                if not self.strategy.cooldown_ready(now=candle_ts):
                     continue
 
                 if self.context.state == BotState.HALTED:
@@ -116,8 +117,8 @@ class TradingBot:
                     await self.executor.manage_position()
                     continue
 
-                if self.strategy.entry_allowed(snapshot, self.balances):
-                    position = self.strategy.create_entry(snapshot)
+                if self.strategy.entry_allowed(snapshot, self.balances, now=candle_ts):
+                    position = self.strategy.create_entry(snapshot, now=candle_ts)
                     order = await self.executor.place_limit_buy(position.entry_price, position.quantity)
                     if order.status == "FILLED":
                         cost = order.price * order.quantity
@@ -127,7 +128,7 @@ class TradingBot:
                         LOGGER.info("Position opened at %.2f", order.price)
                         # For the skeleton we simulate immediate take profit
                         pnl = order.quantity * order.price * self.config.risk.take_profit_pct
-                        self.strategy.on_trade_result(pnl, True)
+                        self.strategy.on_trade_result(pnl, True, now=candle_ts)
                         self.balances["USDT"] += cost + pnl
                         self._update_status(
                             "position_closed",
