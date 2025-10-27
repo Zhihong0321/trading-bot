@@ -46,12 +46,15 @@ export BINANCE_API_SECRET="your-secret"
 python main.py
 ```
 
-The entry point wires up logging, loads the default configuration, and runs the
-async event loop. You can still call `python -m trading_bot.bot` if you prefer to
-interact with the module directly.
+The entry point now hosts a lightweight HTTP status server (compatible with
+Railway's platform expectations) in front of the background trading loop. Health
+checks are available at `GET /healthz`, `/status`, or `/` and return JSON
+snapshots describing the bot state, balance, and last update time.
 
-By default the bot operates against the Binance testnet. Set `BOT_ENV=production`
-to point to the live endpoints before launching the process.
+By default the server listens on `PORT=8000`; Railway will inject the correct
+port via environment variables during deployment. The bot operates against the
+Binance testnet unless you export `BOT_ENV=production` before launching the
+process.
 
 ## Deployment Notes
 
