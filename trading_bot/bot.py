@@ -35,9 +35,13 @@ class TradingBot:
         for candle in candles:
             payload = {
                 "k": {
+                    "t": int(candle.open_time.timestamp() * 1000),
+                    "o": candle.open,
                     "c": candle.close,
                     "v": candle.volume,
                     "T": int(candle.open_time.timestamp() * 1000),
+                    "h": candle.high,
+                    "l": candle.low,
                 },
                 "b": candle.close,
                 "a": candle.close,
