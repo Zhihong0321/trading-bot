@@ -64,6 +64,13 @@ def make_request_handler(status: BotStatusTracker):
     class RequestHandler(BaseHTTPRequestHandler):
         server_version = "TradingBotHTTP/1.0"
 
+        def _write_response(self, body: bytes, *, status_code: int = 200, content_type: str = "application/json") -> None:
+            self.send_response(status_code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
         def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler API)
             if self.path not in {"/", "/healthz", "/status"}:
                 self.send_response(404)
@@ -71,12 +78,63 @@ def make_request_handler(status: BotStatusTracker):
                 return
 
             payload = status.snapshot()
+            if self.path == "/":
+                html = [
+                    "<!DOCTYPE html>",
+                    "<html lang=\"en\">",
+                    "<head>",
+                    "  <meta charset=\"utf-8\">",
+                    "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+                    "  <title>Trading Bot Status</title>",
+                    "  <style>",
+                    "    body { font-family: system-ui, sans-serif; margin: 2rem; background: #0f172a; color: #e2e8f0; }",
+                    "    h1 { margin-bottom: 0.5rem; }",
+                    "    .meta { color: #94a3b8; margin-bottom: 1.5rem; }",
+                    "    table { border-collapse: collapse; width: 100%; max-width: 640px; background: #1e293b; border-radius: 0.5rem; overflow: hidden; }",
+                    "    th, td { padding: 0.75rem 1rem; border-bottom: 1px solid #334155; text-align: left; }",
+                    "    th { background: #334155; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; color: #cbd5f5; }",
+                    "    tr:last-child td { border-bottom: none; }",
+                    "    code { background: #111827; padding: 0.15rem 0.35rem; border-radius: 0.25rem; }",
+                    "    pre { background: #111827; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; color: #93c5fd; }",
+                    "  </style>",
+                    "  <meta http-equiv=\"refresh\" content=\"15\">",
+                    "</head>",
+                    "<body>",
+                    "  <h1>Trading Bot Status</h1>",
+                    "  <p class=\"meta\">Auto-refreshing every 15 seconds &middot; <a href=\"/status\" style=\"color:#38bdf8\">JSON</a> &middot; <a href=\"/healthz\" style=\"color:#38bdf8\">Health</a></p>",
+                ]
+
+                def human(value: object) -> str:
+                    if isinstance(value, float):
+                        return f"{value:,.4f}" if abs(value) < 1000 else f"{value:,.2f}"
+                    return str(value)
+
+                rows = []
+                for key in sorted(payload.keys()):
+                    rows.append(f"    <tr><th>{key}</th><td>{human(payload[key])}</td></tr>")
+
+                html.extend([
+                    "  <table>",
+                    *rows,
+                    "  </table>",
+                    "  <h2 style=\"margin-top:2rem;\">Raw Payload</h2>",
+                    f"  <pre>{json.dumps(payload, indent=2)}</pre>",
+                    "</body>",
+                    "</html>",
+                ])
+                body = "\n".join(html).encode("utf-8")
+                self._write_response(body, content_type="text/html; charset=utf-8")
+                return
+
+            if self.path == "/healthz":
+                state = payload.get("state", "unknown")
+                status_code = 200 if state in {"running", "position_closed"} else 503
+                body = json.dumps({"state": state}).encode("utf-8")
+                self._write_response(body, status_code=status_code)
+                return
+
             body = json.dumps(payload).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self._write_response(body)
 
         def log_message(self, format: str, *args) -> None:  # noqa: A003
             LOGGER.info("HTTP %s - %s", self.address_string(), format % args)

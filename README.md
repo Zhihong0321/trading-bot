@@ -47,9 +47,10 @@ python main.py
 ```
 
 The entry point now hosts a lightweight HTTP status server (compatible with
-Railway's platform expectations) in front of the background trading loop. Health
-checks are available at `GET /healthz`, `/status`, or `/` and return JSON
-snapshots describing the bot state, balance, and last update time.
+Railway's platform expectations) in front of the background trading loop. The
+root path (`GET /`) renders a live HTML dashboard, while `/status` and
+`/healthz` expose JSON snapshots describing the bot state, balance, and last
+update time.
 
 By default the server listens on `PORT=8000`; Railway will inject the correct
 port via environment variables during deployment. The bot operates against the
