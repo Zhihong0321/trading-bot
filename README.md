@@ -41,11 +41,15 @@ export BINANCE_API_SECRET="your-secret"
 ## Running the Bot
 
 ```bash
-python -m trading_bot.bot
+python main.py
 ```
 
+The entry point wires up logging, loads the default configuration, and runs the
+async event loop. You can still call `python -m trading_bot.bot` if you prefer to
+interact with the module directly.
+
 By default the bot operates against the Binance testnet. Set `BOT_ENV=production`
-to point to the live endpoints.
+to point to the live endpoints before launching the process.
 
 ## Deployment Notes
 
